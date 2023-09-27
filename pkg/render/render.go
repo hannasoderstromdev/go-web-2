@@ -6,26 +6,38 @@ import (
 	"net/http"
 	"path/filepath"
 	"text/template"
+
+	"github.com/hannasoderstromdev/go-web-2/pkg/config"
 )
+
+var app *config.AppConfig
+
+// NewTemplates set new templates in app config
+func NewTemplates(a *config.AppConfig) {
+	app = a
+}
 
 // RenderTemplate parses a template file and renders it as HTML
 func RenderTemplate(w http.ResponseWriter, tmpl string) {
+	var tc map[string]*template.Template
 
-	// create template cache
-	tc, err := createTemplateCache()
-	if err !=  nil {
-		log.Fatal(err)
+	// Check app config for cache on/off
+	if app.UseCache {
+		// get template from app.Config cache
+		tc = app.TemplateCache
+	} else {
+		tc, _ = CreateTemplateCache()
 	}
 
 	// get template from cache
 	t, ok := tc[tmpl]
 	if !ok {
-		log.Fatal(err)
+		log.Fatal("could not get template from template cache")
 	}
 
 	buf := new(bytes.Buffer)
 	
-	err = t.Execute(buf, nil)
+	err := t.Execute(buf, nil)
 	if err != nil {
 		log.Println(err)
 	}
@@ -37,7 +49,7 @@ func RenderTemplate(w http.ResponseWriter, tmpl string) {
 	}
 }
 
-func createTemplateCache() (map[string]*template.Template, error) {
+func CreateTemplateCache() (map[string]*template.Template, error) {
 	//myCache := make(map[string]*template.Template)
 
 	myCache := map[string]*template.Template{}
